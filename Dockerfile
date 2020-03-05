@@ -10,12 +10,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
     echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64 /" > /etc/apt/sources.list.d/cuda.list && \
     echo "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1604/x86_64 /" > /etc/apt/sources.list.d/nvidia-ml.list
 
-ENV CUDA_VERSION 9.1.85
+ENV CUDA_VERSION 10.0.130
 
-ENV CUDA_PKG_VERSION 9-1=$CUDA_VERSION-1
+ENV CUDA_PKG_VERSION 10-0=$CUDA_VERSION-1
 RUN apt-get update && apt-get install -y --no-install-recommends \
         cuda-cudart-$CUDA_PKG_VERSION && \
-    ln -s cuda-9.1 /usr/local/cuda && \
+    ln -s cuda-10.0 /usr/local/cuda && \
     rm -rf /var/lib/apt/lists/*
 
 # nvidia-docker 1.0
@@ -31,7 +31,7 @@ ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
 # nvidia-container-runtime
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
-ENV NVIDIA_REQUIRE_CUDA "cuda>=9.1"
+ENV NVIDIA_REQUIRE_CUDA "cuda>=10.0"
 
 # == tensorflow-gpu: tensorflow + cuda and cudnn build with bazel based on the official Dockerfile
 # cf until 1.12.3: https://github.com/tensorflow/tensorflow/blob/v1.12.3/tensorflow/tools/docker/Dockerfile.devel-gpu
@@ -39,19 +39,19 @@ ENV NVIDIA_REQUIRE_CUDA "cuda>=9.1"
 # The difference here is that no jupyter, keras, etc are needed, the goal here is tha bare minimum
 # in order to build the tensorflow-gpu with python3.5, cuda 9.1.85 and cudnn 7.1.3
 
-ENV CUDNN_PKG_VERSION 7.1.3.16-1+cuda9.1
+ENV CUDNN_PKG_VERSION 7.6.4.38-1+cuda10.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         cmake \
-        cuda-command-line-tools-9-1 \
-        cuda-cublas-dev-9-1 \
-        cuda-cudart-dev-9-1 \
-        cuda-cufft-dev-9-1 \
-        cuda-curand-dev-9-1 \
-        cuda-cusolver-dev-9-1 \
-        cuda-cusparse-dev-9-1 \
-        cuda-nvrtc-dev-9-1 \
+        cuda-command-line-tools-10-0 \
+        cuda-cublas-dev-10-0 \
+        cuda-cudart-dev-10-0 \
+        cuda-cufft-dev-10-0 \
+        cuda-curand-dev-10-0 \
+        cuda-cusolver-dev-10-0 \
+        cuda-cusparse-dev-10-0 \
+        cuda-nvrtc-dev-10-0 \
         curl \
         git \
         libcudnn7=$CUDNN_PKG_VERSION \
@@ -76,10 +76,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         wget \
         && \
     rm -rf /var/lib/apt/lists/* && \
-    find /usr/local/cuda-9.1/lib64/ -type f -name 'lib*_static.a' -not -name 'libcudart_static.a' -delete && \
+    find /usr/local/cuda-10.0/lib64/ -type f -name 'lib*_static.a' -not -name 'libcudart_static.a' -delete && \
     rm /usr/lib/x86_64-linux-gnu/libcudnn_static_v7.a
 
-RUN git clone -b 'v1.0.0' --single-branch --depth 1 https://github.com/pytorch/pytorch.git
+RUN git clone -b 'v1.1.0' --single-branch --depth 1 https://github.com/pytorch/pytorch.git
 
 WORKDIR '/pytorch'
 
@@ -88,7 +88,7 @@ RUN git submodule update --init --recursive && \
     pip3 install -r requirements.txt
   
 RUN CUDAHOSTCXX='/usr/bin/gcc' \
-    USE_OPENCV=1 \
+    USE_OPENCV=0 \
     BUILD_TORCH=ON \
     CMAKE_PREFIX_PATH="/usr/bin/" \
     LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/lib:$LD_LIBRARY_PATH \
@@ -100,6 +100,7 @@ RUN CUDAHOSTCXX='/usr/bin/gcc' \
     USE_NNPACK=1 \
     CC=cc \
     CXX=c++ \
-    TORCH_CUDA_ARCH_LIST="6.0 6.1+PTX 7.0" \
+    TORCH_CUDA_ARCH_LIST="7.0+PTX" \
     TORCH_NVCC_FLAGS="-Xfatbin -compress-all" \
     python3 setup.py bdist_wheel
+   
